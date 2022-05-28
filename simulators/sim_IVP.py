@@ -1,0 +1,41 @@
+import numpy as np
+from scipy.integrate import solve_ivp
+
+from controllers.ctr_Parents import Controller
+from systems.sys_Parents import ControlAffineSys
+from simulators.sim_Parents import Simulator
+
+class Sim_SolIVP(Simulator):
+    '''
+    uses scipy.integrate.solve_ivp to simulate system
+
+    Inputs:
+        dynsys: control affine dynamic system object
+        controller: controller object
+        xInitial: array of size (xDim,1) as starting point for dynsys
+        uBounds: array of size (uDim,2) as (min,max) bounds for each control
+        t_duration: duration of simulation in seconds
+        verbose: true if visualizations desired
+    
+    Outputs:
+        if verbose: plot of agent and reference trajectory across simulation
+    '''
+    def __init__(self,
+                 sys: ControlAffineSys,
+                 ctr: Controller) -> None:
+        super().__init__(sys=sys, ctr=ctr)
+
+    def run(self, IC:np.ndarray, duration:float, noise=False) -> np.ndarray:
+        def odefunc(t:float,x:np.ndarray) -> np.ndarray:
+            # helper function for ODE solver.
+            assert x.ndim == 1
+            x = np.reshape(x,(self.sys.xDims,1))
+            u = self.ctr.u(t,x)
+            xdot = self.sys.xdot(t,x,u,noise=noise)
+            return xdot.flatten()
+
+        tspan = (0,duration)
+        traj = solve_ivp(odefunc,tspan,IC.flatten(),max_step=.5)    
+        
+        result = np.block([[traj.y],[np.reshape(traj.t,(1,traj.t.shape[0]))]])
+        return result
