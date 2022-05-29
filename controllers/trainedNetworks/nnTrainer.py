@@ -52,7 +52,8 @@ class train_nCLF():
 
         self.sys:ControlAffineSys = sys()
         self.network = nCLF(self.sys.xDims)
-        self.clfqp_layer = self._makeProblem_CLFQP_layer()
+        self.clfqp_layer = self._makeProblem_clfqp_layer()
+        self.clfqp = self._makeproblem_clfqp()
 
     def train(self):
         num_samples = 10000
@@ -88,17 +89,29 @@ class train_nCLF():
 
                 clf_value_grad = x_ten.grad
 
-                LfV_ten = (clf_value_grad @ f).type_as(clf_value_ten)
-                LgV_ten = (clf_value_grad @ g).type_as(clf_value_ten)
+                LfV_ten:torch.Tensor = (clf_value_grad @ f).type_as(clf_value_ten)
+                LgV_ten:torch.Tensor = (clf_value_grad @ g).type_as(clf_value_ten)
 
                 u_ref = torch.zeros((self.sys.uDims,1),dtype=torch.float32)
-                relax_penalty = torch.tensor([100.],dtype=torch.float32)
+                relax_penalty = torch.tensor([[10000.]],dtype=torch.float32)
                 
+
+                # compute clfqp vanilla (for comparison)
+                self.u_ref_param.value = u_ref.detach().numpy()
+                self.r_penalty_param.value = relax_penalty.detach().numpy()
+                self.V_param.value = clf_value_ten.detach().numpy()
+                self.LfV_param.value = LfV_ten.detach().numpy()
+                self.LgV_param.value = LgV_ten.detach().numpy()
+                self.clfqp.solve()
+                u_og = self.u_var.value
+                r_og = self.r_var.value
+
+                # compute clfqp layer
                 params = [u_ref,relax_penalty,clf_value_ten,LfV_ten,LgV_ten]
                 u,r = self.clfqp_layer(*params)
 
-                assert r >= -1e7, f'r is negative: {r}'
-                average_r += r/num_samples
+                assert r >= -1e-5, f'r is negative: {r}'
+                average_r += r.detach().numpy()[0]/num_samples
                 loss += torch.squeeze(lagrange_relax/num_samples * r)
             
             optimizer.zero_grad()
@@ -112,17 +125,56 @@ class train_nCLF():
         pass
 
 
-    def _makeProblem_CLFQP_layer(self):
+    def _makeProblem_clfqp_layer(self):
         '''
         sets up the CLFQP, and returns it as a differentiable cvxpylayer
         '''
         ### define variables and parameters
         self.u_var = cp.Variable((self.sys.uDims,1))
         self.u_ref_param = cp.Parameter((self.sys.uDims,1))
-        self.r_var = cp.Variable(1,nonneg=True)
-        self.r_penalty_param = cp.Parameter(1,nonneg=True)
-        self.V_param = cp.Parameter(1,nonneg=True) 
-        self.LfV_param =  cp.Parameter(1)
+        self.r_var = cp.Variable((1,1),nonneg=True)
+        self.r_penalty_param = cp.Parameter((1,1),nonneg=True)
+        self.V_param = cp.Parameter((1,1),nonneg=True) 
+        self.LfV_param =  cp.Parameter((1,1))
+        self.LgV_param = cp.Parameter((1,self.sys.uDims))
+        c = 1 # hyperparameter, should be tied to one used during training
+
+        ### define objective
+        objective_expression = cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_penalty_param,self.r_var)
+        objective = cp.Minimize(objective_expression)
+
+        ### define constraints
+        constraints = []
+        # control constraints
+        for iu in range(self.sys.uDims):
+            constraints.append(self.u_var[iu] >= self.sys.uBounds[iu,0])
+            constraints.append(self.u_var[iu] <= self.sys.uBounds[iu,1])
+        # CLF constraint
+        constraints.append(self.LfV_param + self.LgV_param@self.u_var <= self.V_param + self.r_var)
+        constraints.append(self.r_var[0,0] >= 0)
+
+        ### assemble problem
+        problem = cp.Problem(objective,constraints)
+        assert problem.is_dpp(), 'Problem is not dpp'
+
+        # convert to differentiable layer, store in self for later use
+        variables = [self.u_var,self.r_var]
+        parameters = [self.u_ref_param,self.r_penalty_param,self.V_param,self.LfV_param,self.LgV_param]
+        problem_layer = CvxpyLayer(problem=problem,variables=variables,parameters=parameters)
+        
+        return problem_layer
+
+    def _makeproblem_clfqp(self) -> cp.Problem:
+        '''
+        sets up the CLFQP
+        '''
+        ### define variables and parameters
+        self.u_var = cp.Variable((self.sys.uDims,1))
+        self.u_ref_param = cp.Parameter((self.sys.uDims,1))
+        self.r_var = cp.Variable((1,1),nonneg=True)
+        self.r_penalty_param = cp.Parameter((1,1),nonneg=True)
+        self.V_param = cp.Parameter((1,1),nonneg=True) 
+        self.LfV_param =  cp.Parameter((1,1))
         self.LgV_param = cp.Parameter((1,self.sys.uDims))
         c = 1 # hyperparameter, should be tied to one used during training
 
@@ -141,13 +193,5 @@ class train_nCLF():
 
         ### assemble problem
         problem = cp.Problem(objective,constraints)
-        assert problem.is_dpp(), 'Problem is not dpp'
-
-        # convert to differentiable layer, store in self for later use
-        variables = [self.u_var,self.r_var]
-        parameters = [self.u_ref_param,self.r_penalty_param,self.V_param,self.LfV_param,self.LgV_param]
-        problem_layer = CvxpyLayer(problem=problem,parameters=parameters,variables=variables)
-        
-        return problem_layer
-
-
+        assert problem.is_qp(), 'Problem is not qp'
+        return problem

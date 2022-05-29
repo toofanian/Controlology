@@ -39,7 +39,7 @@ class Ctr_nCLF(Controller):
         self.LgV_param.value = Lg_V
         self.clfqp.solve()
         
-        assert self.r_var.value >= 0, f'r_var value is negative: {self.r_var.value}'
+        assert self.r_var.value < 1e-5, f'r_var value is negative: {self.r_var.value}'
         return self.u_var.value
 
     def _makeproblem_clfqp(self) -> cp.Problem:
