@@ -1,3 +1,4 @@
+from types import NoneType
 import torch
 import cvxpy as cp
 import numpy as np
@@ -9,20 +10,20 @@ from systems.sys_Parents import ControlAffineSys
 class Ctr_nCLF(Controller):
     def __init__(self,
                  sys: ControlAffineSys,
-                 model_path:str,
+                 model_path:str = 'controllers/trainedNetworks/trainedCLF_2.pth',
                  refcontrol:Optional[Controller]=None) -> None: #TODO implement ref control class
         super().__init__(sys)
         self.nCLF = torch.load(model_path)
-        self.refcontrol:Controller = refcontrol(sys)
+        self.refcontrol:Controller = refcontrol(sys) if type(refcontrol) != NoneType else np.zeros((self.sys.uDims,1))
         self.clfqp = self._makeproblem_clfqp()
 
     def u(self,t,x):
-        u_ref = self.refcontrol.u(t,x)
+        u_ref = self.refcontrol.u(t,x) if type(self.refcontrol) != np.ndarray else self.refcontrol
 
         f = self.sys.f(t,x)
         g = self.sys.g(t,x)
 
-        x_ten = torch.tensor(x,requires_grad=True)
+        x_ten = torch.tensor(x.T,requires_grad=True)
         clf_value_ten:torch.Tensor = self.nCLF(x_ten.float())
         clf_value_ten.backward()
 
@@ -31,12 +32,11 @@ class Ctr_nCLF(Controller):
         Lg_V = (x_ten.grad@g).type_as(clf_value_ten).detach().numpy()
 
         # send V, Lf_V, Lg_V to clfqp, solve for r (must be done one at a time, not as batch)
-        self.r_penalty_param = 100
-        
+        self.r_penalty_param.value = np.array([100])
         self.u_ref_param.value = u_ref
-        self.V_param = clf_value
-        self.LfV_param = Lf_V
-        self.LgV_param = Lg_V
+        self.V_param.value = np.reshape(clf_value,(1,))
+        self.LfV_param.value = np.reshape(Lf_V,(1,))
+        self.LgV_param.value = Lg_V
         self.clfqp.solve()
         
         assert self.r_var.value >= 0, f'r_var value is negative: {self.r_var.value}'

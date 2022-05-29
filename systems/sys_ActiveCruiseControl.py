@@ -17,7 +17,9 @@ class activeCruiseControl(ControlAffineSys):
         self.vdes = 10
         self.vlead = 10
 
-    def f(self, t:float, x:np.ndarray) -> np.ndarray:
+    def f(self,
+          t:float, 
+          x:np.ndarray) -> np.ndarray:
         def fric(x):
             v = x[0,0]
             fric_coeff = self.fric_coeff
@@ -25,20 +27,25 @@ class activeCruiseControl(ControlAffineSys):
         f = np.array([[-1/self.m*fric(x)],[self.vlead - x[0,0]]])
         return f
 
-    def g(self, t:float, x:np.ndarray) -> np.ndarray:
+    def g(self,
+          t:float, 
+          x:np.ndarray) -> np.ndarray:
         g = np.array([[1/self.m],[0]])
         return g
 
-    def w(self, t:float, x:np.ndarray) -> np.ndarray:
+    def w(self,
+          t:float, 
+          x:np.ndarray) -> np.ndarray:
         w = np.zeros((2,1))
         return w
 
-    def xdot(self, t:float, x:np.ndarray, u:np.ndarray, noise:bool=True) -> Tuple[np.ndarray,np.ndarray,np.ndarray]:
+    def xdot(self, 
+             t:float, 
+             x:np.ndarray, 
+             u:np.ndarray, 
+             noise:bool=True) -> Tuple[np.ndarray,np.ndarray,np.ndarray]:
         f = self.f(t,x)
         g = self.g(t,x)
         w = self.w(t,x)
         if noise == False: w = np.zeros(w.shape)
         return f + g@u + w
-
-    def modify_ubounds(self,uBounds:np.ndarray):
-        self.uBounds = uBounds

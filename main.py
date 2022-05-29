@@ -1,6 +1,7 @@
 import numpy as np
 
 from systems.sys_ActiveCruiseControl import activeCruiseControl
+from controllers.ctr_nCLF            import Ctr_nCLF
 from controllers.ctr_CLF_ACC         import Controller_CLF_ACC
 from simulators.sim_IVP              import Sim_SolIVP
 from visualizers.vis_PlotTime        import Vis_PlotTime
@@ -15,7 +16,7 @@ if __name__ == '__main__':
 
     # instantiate test suite
     tester = Tst_Baseline(sys = activeCruiseControl,
-                          ctr = Controller_CLF_ACC,
+                          ctr = Ctr_nCLF,
                           sim = Sim_SolIVP,
                           vis = Vis_PlotTime)
 

@@ -6,5 +6,8 @@ class Visualizer(ABC):
         super().__init__()
     
     @abstractmethod
-    def render(self,data) -> None:
+    def render(self,x_data,u_data=None) -> None:
+        '''
+        input state data and control data. Should be column-wise, indexed with last row as time.
+        '''
         pass

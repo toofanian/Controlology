@@ -1,3 +1,4 @@
+import time
 import torch
 import torch.nn as nn
 import numpy as np
@@ -5,9 +6,8 @@ import cvxpy as cp
 from cvxpylayers.torch import CvxpyLayer
 from torch.utils.data import Dataset,DataLoader
 
-
 from systems.sys_Parents import ControlAffineSys
-
+from systems.sys_ActiveCruiseControl import activeCruiseControl
 
 class nCLF(nn.Module):
     def  __init__(self,
@@ -28,7 +28,8 @@ class nCLF(nn.Module):
         self.stack_mlp = nn.Sequential(*layers)
 
     def forward(self,x):
-        return self.stack_mlp(x)**2 # TODO squared to enforce pos def, but is there a better way to do this?
+        out = self.stack_mlp(x)**2 # TODO squared to enforce pos def, but is there a better way to do this?
+        return out
 
 
 class dataset_UniformStates(Dataset):
@@ -54,7 +55,7 @@ class train_nCLF():
         self.clfqp_layer = self._makeProblem_CLFQP_layer()
 
     def train(self):
-        num_samples = 5000
+        num_samples = 10000
         dataset = dataset_UniformStates(xBounds=self.sys.xBounds,num_samples=num_samples)
         dataloader = DataLoader(dataset=dataset,batch_size=1,shuffle=True)
         # TODO allow batch > 1. currently bottlenecked at qp.
@@ -64,26 +65,31 @@ class train_nCLF():
         lagrange_atzero = 10.
         lagrange_relax = 100
 
-        epochs = 10
+        epochs = 30
+        print(f'training start...')
         for epoch in range(epochs):
-            clf_val_atzero:torch.Tensor = self.network(torch.zeros((self.sys.xDims,1)).float())
+            ti = time.time()
+            average_r = 0
+            clf_val_atzero:torch.Tensor = self.network(torch.zeros((self.sys.xDims,1)).T.float())
             assert clf_val_atzero >= 0
 
             loss = torch.zeros((1))
-            loss += lagrange_atzero*clf_val_atzero
+            loss += torch.squeeze(lagrange_atzero*clf_val_atzero)
 
-            for i,x in enumerate(dataloader):
-
+            for i,x_ten in enumerate(dataloader):
+                
+                x = x_ten.detach().numpy().T
                 f = self.sys.f(0,x)
                 g = self.sys.g(0,x)
-
-                x_ten = torch.tensor(x,requires_grad=True)
+                
+                x_ten.requires_grad_(requires_grad=True)
                 clf_value_ten:torch.Tensor = self.network(x_ten.float())
-                clf_value_ten.backward()
+                clf_value_ten.backward(retain_graph=True)
 
-                clf_value_ten = clf_value_ten
-                LfV_ten = (x_ten.grad@f).type_as(clf_value_ten)
-                LgV_ten = (x_ten.grad@g).type_as(clf_value_ten)
+                clf_value_grad = x_ten.grad
+
+                LfV_ten = (clf_value_grad @ f).type_as(clf_value_ten)
+                LgV_ten = (clf_value_grad @ g).type_as(clf_value_ten)
 
                 u_ref = torch.zeros((self.sys.uDims,1),dtype=torch.float32)
                 relax_penalty = torch.tensor([100.],dtype=torch.float32)
@@ -91,16 +97,18 @@ class train_nCLF():
                 params = [u_ref,relax_penalty,clf_value_ten,LfV_ten,LgV_ten]
                 u,r = self.clfqp_layer(*params)
 
-                assert r >= 0, f'r is negative: {r}'
-
-                loss += lagrange_relax/num_samples * r
+                assert r >= -1e7, f'r is negative: {r}'
+                average_r += r/num_samples
+                loss += torch.squeeze(lagrange_relax/num_samples * r)
             
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
         
+            print(f'epoch {epoch} of {epochs} complete.\tloss: {loss.detach().numpy()[0]}.\taverage r:{average_r}\tepoch time: {round(time.time()-ti)} seconds')
+
             if loss <= .05: break
-        torch.save(self.network,'trainedNetworks/trainedCLF.pth')
+        torch.save(self.network,'controllers/trainedNetworks/trainedCLF_2.pth')
         pass
 
 
@@ -143,9 +151,3 @@ class train_nCLF():
         return problem_layer
 
 
-    
-
-
-if __name__ == '__main__':
-    
-    trainer = train_nCLF()

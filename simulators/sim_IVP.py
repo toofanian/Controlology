@@ -26,16 +26,20 @@ class Sim_SolIVP(Simulator):
         super().__init__(sys=sys, ctr=ctr)
 
     def run(self, IC:np.ndarray, duration:float, noise=False) -> np.ndarray:
+        self.u_seq = np.empty((self.sys.uDims+1,0))
         def odefunc(t:float,x:np.ndarray) -> np.ndarray:
             # helper function for ODE solver.
             assert x.ndim == 1
             x = np.reshape(x,(self.sys.xDims,1))
             u = self.ctr.u(t,x)
+            u_forseq = np.concatenate((u,np.array([[t]])),axis=0)
+            self.u_seq = np.concatenate((self.u_seq,u_forseq),axis=1)
             xdot = self.sys.xdot(t,x,u,noise=noise)
             return xdot.flatten()
 
         tspan = (0,duration)
         traj = solve_ivp(odefunc,tspan,IC.flatten(),max_step=.5)    
         
-        result = np.block([[traj.y],[np.reshape(traj.t,(1,traj.t.shape[0]))]])
-        return result
+        x_data = np.block([[traj.y],[np.reshape(traj.t,(1,traj.t.shape[0]))]])
+        u_data = self.u_seq
+        return x_data,u_data

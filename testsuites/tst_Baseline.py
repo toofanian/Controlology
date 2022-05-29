@@ -17,5 +17,5 @@ class Tst_Baseline(TestSuite):
             duration,
             noise=False,
             verbose=True):
-        self.data = self.sim.run(IC,duration,noise)
-        if verbose: self.vis.render(self.data)
+        self.x_data,self.u_data = self.sim.run(IC,duration,noise)
+        if verbose: self.vis.render(self.x_data,self.u_data)
