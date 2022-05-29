@@ -230,8 +230,6 @@ def makeProblem_CLFQP():
     c = 1
     constraints.append(LfV_param + LgV_param*u_var + c*V_param - r_var <= 0)
 
-    print(constraints)
-    sys.exit()
     ### assemble problem
     problem = cp.Problem(objective,constraints)
     assert problem.is_dpp(), 'Problem is not DPP'

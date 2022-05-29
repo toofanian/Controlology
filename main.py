@@ -1,10 +1,10 @@
 import numpy as np
 
-from systems.sys_276BPR3            import Sys_276BPR3
-from controllers.ctr_276BPR3_CEC    import Ctr_276BPR3_CEC
-from simulators.sim_276BPR3         import Sim_276BPR3
-from visualizers.vis_276BPR3        import Vis_276BPR3
-from testsuites.tst_Baseline        import Tst_Baseline
+from systems.sys_ActiveCruiseControl import activeCruiseControl
+from controllers.ctr_CLF_ACC         import Controller_CLF_ACC
+from simulators.sim_IVP              import Sim_SolIVP
+from visualizers.vis_PlotTime        import Vis_PlotTime
+from testsuites.tst_Baseline         import Tst_Baseline
 
 if __name__ == '__main__':
     '''
@@ -14,14 +14,14 @@ if __name__ == '__main__':
     '''
 
     # instantiate test suite
-    tester = Tst_Baseline(sys = Sys_276BPR3,
-                          ctr = Ctr_276BPR3_CEC,
-                          sim = Sim_276BPR3,
-                          vis = Vis_276BPR3)
+    tester = Tst_Baseline(sys = activeCruiseControl,
+                          ctr = Controller_CLF_ACC,
+                          sim = Sim_SolIVP,
+                          vis = Vis_PlotTime)
 
     # user define initial condition, duration, and sim options
-    xi = np.array([[1.5],[0],[np.pi/2]])
-    duration = 120
+    xi = np.array([[2],[-1]])
+    duration = 50
     noise = True
 
     # run sim, generate visualizations if verbose

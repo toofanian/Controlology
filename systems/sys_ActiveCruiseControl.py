@@ -5,14 +5,14 @@ from typing import Tuple,Union,Optional
 class activeCruiseControl(ControlAffineSys):
     def __init__(self) -> None:
         xDims = 2
-        xBounds = np.array([[-3,3],[-3,3]])
+        xBounds = np.array([[0,30],[-100,100]])
 
         uDims = 1
         uBounds = np.array([[-100000,100000]])
 
         super().__init__(xDims=xDims,xBounds=xBounds,uDims=uDims,uBounds=uBounds)
             
-        self.fric_coeff = [0.1, 5., 0.25]
+        self.fric_coeff = [0,0,0]#[0.1, 5., 0.25]
         self.m = 1650
         self.vdes = 10
         self.vlead = 10

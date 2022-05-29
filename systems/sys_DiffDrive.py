@@ -6,6 +6,7 @@ from .sys_Parents import ControlAffineSys
 class Sys_DiffDrive(ControlAffineSys):
     def __init__(self) -> None:
         xDims = 3 #TODO replace this super init pass with abstract property?
+        xBounds = np.array([[-3,3],[-3,3]])
         uDims = 2
         uBounds = np.array([[0,1],[-1,1]]) #TODO return these to 0,1 and -1,1
         super().__init__(xDims=xDims,uDims=uDims,uBounds=uBounds)
