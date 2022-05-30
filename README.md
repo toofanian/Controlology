@@ -1,52 +1,36 @@
-# Project 3: Infinite-Horizon Stochastic Optimal Control
-I put a bit more effort into this code, since it is more closely related to my research and other MAE coursework, and I'd like to reuse it later. The file structure and some class structure was moderately inspired by [this nonlinear control repo](https://github.com/MIT-REALM/neural_clbf), which I've been studying from to develop neural control lyapunov/barrier functions. **No code was copied**, and the technical matter is only tangentially related. Everything in this submission was written by me, from scratch, specifically for this project (except for the provided utils, of course).
+# Toof Control Package
+General nonlinear control playground, built to prevent redundant coding during research, and also as good practice. There are probably other, better packages for similar applications.
 
 ## File structure:
 ```
-submisison
+ToofControlPackage
 │-  README.md
-│-  main.py          <--- runs code as described in report
+│-  main_test.py        <--- tests a controller on a system
+│-  main_train.py       <--- trains a neural controller for a system
 │
 └───systems
 │   │-  sys_Parents.py      <--- abstract parent classes
-│   │-  sys_DiffDrive.py    <--- system used in report
-│   │-  ...                 <--- other systems, beyond project scope
+│   │-  ...                 <--- systems, add more per abc
 │   
 └───controllers
 │   │-  ctr_Parents.py      <--- abstract parent classes
-│   │-  ctr_CEC.py          <--- controller used in report part 1
-│   │-  ctr_GPI.py          <--- controller used in report part 2
-│   │-  ...                 <--- other controllers, beyond project scope
+│   │-  ...                 <--- controllers, add more per abc
+│   └───trainedNetworks
+│       │-  nnTrainer.py    <--- neural lyapunov trainer class
+│       │-  ~~~~~~.pth      <--- saved pytorch networks
 │
 └───simulators
 │   │-  sim_Parents.py      <--- abstract parent classes
-│   │-  sim_276BPR3.py      <--- baseline sim used in report
-│   │-  ...                 <--- other sims, used where referenced
+│   │-  ...                 <--- simulators, add more per abc
 │
 └───visualizers
 │   │-  vis_Parents.py      <--- abstract parent classes
-│   │-  vis_276BPR3.py      <--- baseline vis used in report
-│   │-  ...                 <--- other vis, used where referenced
+│   │-  ...                 <--- visualizers, add more per abc
 │
 └───testsuites
 │   │-  tst_Parents.py      <--- abstract parent classes
-│   │-  tst_Baseline.py     <--- baseline test suite used in report
-│   │-  ...                 <--- other test suites, used where referenced
+│   │-  ...                 <--- test suites, add more per abc
 │
 └───utilities
-    │-  utils.py            <--- the provided utils file
+    │-  ...                 <--- miscellaneous helper functions
 ```
-
-## Instructions:
-
-main.py is straightforward to use. it does the following:
-* picks a dynamic system from /systems, specifically the diff drive
-  * this contains the drift f(x), g(x), w(x) info, as well as control bounds.
-* picks a controller from /controllers, specifically CEC or GPI
-  * this uses info from the dynamic system to calculate the control policy
-* picks a simulator from /simulators, specifically the baseline sim
-  * this uses the system and controller to simulate the system through time
-* picks a visualizer from /visualizers, specifically the baseline vis
-  * this renders the sim data for the user to review
-
-For details on how the interior functions work, please review the code, which is extensively commented.
