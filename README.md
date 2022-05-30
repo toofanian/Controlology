@@ -16,8 +16,8 @@ ToofControlPackage
 │   │-  ctr_Parents.py      <--- abstract parent classes
 │   │-  ...                 <--- controllers, add more per abc
 │   └───trainedNetworks
-│       │-  nnTrainer.py    <--- neural lyapunov trainer class
-│       │-  ~~~~~~.pth      <--- saved pytorch networks
+│       │-  nnTrainer.py        <--- neural lyapunov trainer class
+│       │-  ~~~~~~.pth          <--- saved pytorch networks
 │
 └───simulators
 │   │-  sim_Parents.py      <--- abstract parent classes
