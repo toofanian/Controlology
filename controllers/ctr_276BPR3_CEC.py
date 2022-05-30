@@ -1,12 +1,12 @@
-from types import NoneType
-from matplotlib import pyplot as plt
 import numpy as np
-from sympy import true
-from utilities.utils import reftraj_lsd
 import casadi as cas
+
+from types import NoneType
 
 from .ctr_Parents           import Controller
 from systems.sys_Parents    import ControlAffineSys
+from utilities.utils        import reftraj_lsd
+
 
 class Ctr_276BPR3_CEC(Controller):
     def __init__(self, sys:ControlAffineSys) -> None:
