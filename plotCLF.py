@@ -6,7 +6,7 @@ clf = torch.load('controllers/trainedNetworks/singleint_60epoch_10penalty.pth')
 
 
 
-x = np.arange(start=-2,stop=2,step=.001)
+x = np.arange(start=-2,stop=2,step=.01)
 y = np.empty(x.shape)
 
 for i in range(x.shape[0]):

@@ -1,5 +1,5 @@
 plotCLF.py
 sandbox.py
-*code-workspace
-*pycache
+*.code-workspace
+*__pycache__
 README_276BPR3.md
