@@ -4,7 +4,7 @@ import numpy as np
 import cvxpy as cp
 from typing import Tuple,Optional,Union
 
-class Controller_CLF2Orig(Controller): 
+class Controller_CLF_DoubleIntegrator(Controller): 
     def __init__(self, sys:ControlAffineSys) -> None:
         super().__init__(sys=sys)
 
@@ -14,7 +14,7 @@ class Controller_CLF2Orig(Controller):
         self.u_ref_param.value = np.array([[0.]])
         clf_val,clf_grad = self.clf(x)
 
-        self.r_penalty_param.value = np.array([[1.]])
+        self.r_penalty_param.value = np.array([[100.]])
         self.V_param.value = clf_val
         self.LfV_param.value = clf_grad@self.sys.f(0,x)
         self.LgV_param.value = clf_grad@self.sys.g(0,x)
@@ -26,7 +26,11 @@ class Controller_CLF2Orig(Controller):
         return u_val
 
     def clf(self, x:np.ndarray) -> Tuple[float,np.ndarray]:
-        return np.array([[np.linalg.norm(x)**2]]) / 2 , x.T
+        clf_val = np.array([[np.linalg.norm(x)**2]])
+        clf_grad = x.T
+        assert clf_val.ndim == 2
+        assert clf_grad.ndim == 2
+        return clf_val,clf_grad
     
     def _makeproblem_clfqp(self) -> cp.Problem:
         '''

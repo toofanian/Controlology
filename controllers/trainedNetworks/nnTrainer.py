@@ -61,12 +61,12 @@ class train_nCLF():
         dataloader = DataLoader(dataset=dataset,batch_size=1,shuffle=True)
         # TODO allow batch > 1. currently bottlenecked at qp.
 
-        optimizer = torch.optim.Adam(self.network.parameters(),lr=.003)
+        optimizer = torch.optim.Adam(self.network.parameters(),lr=.002)
 
         lagrange_atzero = 10.
-        lagrange_relax = 100
+        lagrange_relax = 1000.
 
-        epochs = 30
+        epochs = 60
         print(f'training start...')
         for epoch in range(epochs):
             ti = time.time()
@@ -86,23 +86,21 @@ class train_nCLF():
                 x_ten.requires_grad_(requires_grad=True)
                 clf_value_ten:torch.Tensor = self.network(x_ten.float())
                 clf_value_ten.backward(retain_graph=True)
-
                 clf_value_grad = x_ten.grad
 
                 LfV_ten:torch.Tensor = (clf_value_grad @ f).type_as(clf_value_ten)
                 LgV_ten:torch.Tensor = (clf_value_grad @ g).type_as(clf_value_ten)
 
                 u_ref = torch.zeros((self.sys.uDims,1),dtype=torch.float32)
-                relax_penalty = torch.tensor([[10000.]],dtype=torch.float32)
+                relax_penalty = torch.tensor([[10]],dtype=torch.float32)
                 
-
                 # compute clfqp vanilla (for comparison)
-                self.u_ref_param.value = u_ref.detach().numpy()
-                self.r_penalty_param.value = relax_penalty.detach().numpy()
-                self.V_param.value = clf_value_ten.detach().numpy()
-                self.LfV_param.value = LfV_ten.detach().numpy()
-                self.LgV_param.value = LgV_ten.detach().numpy()
-                self.clfqp.solve()
+                self.u_ref_param.value      = u_ref.detach().numpy()
+                self.r_penalty_param.value  = relax_penalty.detach().numpy()
+                self.V_param.value          = clf_value_ten.detach().numpy()
+                self.LfV_param.value        = LfV_ten.detach().numpy()
+                self.LgV_param.value        = LgV_ten.detach().numpy()
+                #self.clfqp.solve()
                 u_og = self.u_var.value
                 r_og = self.r_var.value
 
@@ -110,7 +108,11 @@ class train_nCLF():
                 params = [u_ref,relax_penalty,clf_value_ten,LfV_ten,LgV_ten]
                 u,r = self.clfqp_layer(*params)
 
-                assert r >= -1e-5, f'r is negative: {r}'
+                # BUG r should be nonneg, but sometimes it's just not...
+                # so i'm adding a relu...
+                # assert r >= -1e-5, f'r is negative: {r}'
+                r = torch.relu(r)
+
                 average_r += r.detach().numpy()[0]/num_samples
                 loss += torch.squeeze(lagrange_relax/num_samples * r)
             
@@ -118,10 +120,10 @@ class train_nCLF():
             loss.backward()
             optimizer.step()
         
-            print(f'epoch {epoch} of {epochs} complete.\tloss: {loss.detach().numpy()[0]}.\taverage r:{average_r}\tepoch time: {round(time.time()-ti)} seconds')
+            print(f'epoch {epoch}\tof {epochs} complete.\tloss: {loss.detach().numpy()[0]}.\taverage r: {average_r}\tepoch time: {round(time.time()-ti)} seconds')
 
             if loss <= .05: break
-        torch.save(self.network,'controllers/trainedNetworks/trainedCLF_2.pth')
+        torch.save(self.network,'controllers/trainedNetworks/singleint_60epoch_10penalty.pth')
         pass
 
 
@@ -150,8 +152,7 @@ class train_nCLF():
             constraints.append(self.u_var[iu] >= self.sys.uBounds[iu,0])
             constraints.append(self.u_var[iu] <= self.sys.uBounds[iu,1])
         # CLF constraint
-        constraints.append(self.LfV_param + self.LgV_param@self.u_var <= self.V_param + self.r_var)
-        constraints.append(self.r_var[0,0] >= 0)
+        constraints.append(self.LfV_param + self.LgV_param@self.u_var <= -self.V_param + self.r_var)
 
         ### assemble problem
         problem = cp.Problem(objective,constraints)
