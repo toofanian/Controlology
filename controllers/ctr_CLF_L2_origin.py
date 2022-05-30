@@ -1,8 +1,12 @@
-from .ctr_Parents import Controller
-from systems.sys_Parents import ControlAffineSys
+
 import numpy as np
 import cvxpy as cp
+
 from typing import Tuple,Optional,Union
+from numpy import ndarray
+
+from .ctr_Parents           import Controller
+from systems.sys_Parents    import ControlAffineSys
 
 from utilities.clfqp import makeproblem_clfqp
 
@@ -12,7 +16,7 @@ class Controller_CLF_L2_Origin(Controller):
 
         self.problem = makeproblem_clfqp(self)
     
-    def u(self, t:float, x:np.ndarray) -> np.ndarray:
+    def u(self,x:ndarray,t:Optional[float]=None) -> ndarray:
         self.u_ref_param.value = np.array([[0.]])
         clf_val,clf_grad = self.clf(x)
 

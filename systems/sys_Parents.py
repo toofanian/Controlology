@@ -1,5 +1,6 @@
 from abc import ABC,abstractmethod
 from numpy import ndarray
+from typing import Optional
 
 class ControlAffineSys(ABC):
     def __init__(self,
@@ -14,38 +15,38 @@ class ControlAffineSys(ABC):
         self.uBounds = uBounds
 
     @abstractmethod
-    def f(self,t:float,x:ndarray) -> ndarray:
+    def f(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         '''
         returns drift dynamics
             inputs:
-                t: time for time dependent dynamics. assign any if time invariant
                 x: state provided as array of shape (xdims,1)
+                t: time for time dependent dynamics. assign any if time invariant
             outputs: 
                 f: drift field as array of shape (xdims,1)
         '''
         pass
 
     @abstractmethod
-    def g(self,t:float,x:ndarray) -> ndarray:
+    def g(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         '''
         returns control affine dynamics
             inputs:
-                t: time for time dependent dynamics. assign any if time invariant
                 x: state provided as array of shape (xdims,1)
+                t: time for time dependent dynamics. assign any if time invariant
             outputs: 
                 g: affine control fields as array of shape (xdims,udims)
         '''
         pass
 
     @abstractmethod
-    def w(self,t:float,x:ndarray) -> ndarray:
+    def w(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         '''
         returns disturbance on dynamics
         '''
         pass
 
     @abstractmethod
-    def xdot(self,t:float,x:ndarray,u:ndarray,noise:bool) -> ndarray:
+    def xdot(self,x:ndarray,t:Optional[float]=None,u:Optional[ndarray]=None,noise:bool=False) -> ndarray:
         '''
         returns xdot = f(x) + g(x)u + w(x)
             inputs:
@@ -56,6 +57,3 @@ class ControlAffineSys(ABC):
                 xdot: total system dynamics as array of shape (xdims,1)
         '''
         pass
-
-    def modify_ubounds(self,uBounds:ndarray) -> None:
-        self.uBounds = uBounds

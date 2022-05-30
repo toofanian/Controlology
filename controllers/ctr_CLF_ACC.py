@@ -2,6 +2,7 @@ import numpy as np
 import cvxpy as cp
 
 from typing import Tuple,Optional,Union
+from numpy import ndarray
 
 from .ctr_Parents           import Controller
 from systems.sys_Parents    import ControlAffineSys
@@ -13,7 +14,7 @@ class Controller_CLF_ACC(Controller):
         super().__init__(sys=sys)
         self.makeProblem_CLFQP()
     
-    def u(self, t:float, x:np.ndarray) -> np.ndarray:
+    def u(self,x:ndarray,t:Optional[float]=None) -> ndarray:
         self.u_ref_param.value = np.array([[0.]])
         self.r_penalty_param.value = np.array([1000000.])
         clf_val,clf_grad = self.clf(x)

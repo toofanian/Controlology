@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 
+from typing import Tuple
+from numpy import ndarray
+
 from controllers.ctr_Parents import Controller
 from systems.sys_Parents import ControlAffineSys
 from simulators.sim_Parents import Simulator
@@ -25,13 +28,13 @@ class Sim_SolIVP(Simulator):
                  ctr: Controller) -> None:
         super().__init__(sys=sys, ctr=ctr)
 
-    def run(self, IC:np.ndarray, duration:float, noise=False) -> np.ndarray:
+    def run(self,IC:ndarray,duration:float,noise:bool=False) -> Tuple[ndarray,ndarray]:
         self.u_seq = np.empty((self.sys.uDims+1,0))
         def odefunc(t:float,x:np.ndarray) -> np.ndarray:
             # helper function for ODE solver.
             assert x.ndim == 1
             x = np.reshape(x,(self.sys.xDims,1))
-            u = self.ctr.u(t,x)
+            u = self.ctr.u(x=x)
             u_forseq = np.concatenate((u,np.array([[t]])),axis=0)
             self.u_seq = np.concatenate((self.u_seq,u_forseq),axis=1)
             xdot = self.sys.xdot(t,x,u,noise=noise)

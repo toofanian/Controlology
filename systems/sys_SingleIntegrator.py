@@ -1,6 +1,9 @@
-from .sys_Parents import ControlAffineSys
 import numpy as np
+
 from typing import Tuple,Union,Optional
+from numpy import ndarray
+
+from .sys_Parents import ControlAffineSys
 
 class Sys_SingleIntegrator(ControlAffineSys):
     def __init__(self) -> None:
@@ -11,24 +14,22 @@ class Sys_SingleIntegrator(ControlAffineSys):
 
         super().__init__(xDims=xDims,xBounds=xBounds,uDims=uDims,uBounds=uBounds)
 
-    def f(self, t:float, x:np.ndarray) -> np.ndarray:
+    def f(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         f = np.array([[0]])
         return f
 
-    def g(self, t:float, x:np.ndarray) -> np.ndarray:
+    def g(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         g = np.array([[1]])
         return g
 
-    def w(self, t:float, x:np.ndarray) -> np.ndarray:
+    def w(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         w = np.zeros((self.xDims,1))
         return w
 
-    def xdot(self, t:float, x:np.ndarray, u:np.ndarray, noise:bool=True) -> Tuple[np.ndarray,np.ndarray,np.ndarray]:
+    def xdot(self,x:ndarray,t:Optional[float]=None,u:Optional[ndarray]=None,noise:bool=False) -> ndarray:
         f = self.f(t,x)
         g = self.g(t,x)
         w = self.w(t,x)
+        if u == None: u = np.zeros((self.uDims,1))
         if noise == False: w = np.zeros(w.shape)
         return f + g@u + w
-
-    def modify_ubounds(self,uBounds:np.ndarray):
-        self.uBounds = uBounds

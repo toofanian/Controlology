@@ -1,5 +1,9 @@
 import numpy as np
 
+from numpy import ndarray
+from typing import Optional
+from types import NoneType
+
 from systems.sys_Parents    import ControlAffineSys
 from .ctr_Parents           import Controller
 from utilities.utils        import reftraj_lsd
@@ -8,7 +12,9 @@ class Ctr_P(Controller):
     def __init__(self,sys:ControlAffineSys) -> None:
         super().__init__(sys=sys)
 
-    def u(self, t:float, x:np.ndarray) -> np.ndarray:
+    def u(self,x:ndarray,t:Optional[float]=None) -> ndarray:
+        assert type(t) != NoneType
+        
         u = np.zeros((self.sys.uDims,1))
 
         xref = reftraj_lsd(t)

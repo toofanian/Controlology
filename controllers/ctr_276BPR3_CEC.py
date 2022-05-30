@@ -2,6 +2,8 @@ import numpy as np
 import casadi as cas
 
 from types import NoneType
+from numpy import ndarray
+from typing import Optional
 
 from .ctr_Parents           import Controller
 from systems.sys_Parents    import ControlAffineSys
@@ -14,7 +16,7 @@ class Ctr_276BPR3_CEC(Controller):
         self.u_lastseq = None
         self.x_lastseq = None
 
-    def u(self, t:float, x:np.ndarray) -> np.ndarray:    
+    def u(self,x:ndarray,t:Optional[float]=None) -> ndarray:
         
         x = x - reftraj_lsd(t)
         

@@ -1,10 +1,13 @@
 import numpy as np
-from numpy import ndarray
 from time import time
 
-from .sim_Parents import Simulator
-from systems.sys_Parents import ControlAffineSys
-from controllers.ctr_Parents import Controller
+from numpy import ndarray
+from typing import Tuple
+
+from .sim_Parents               import Simulator
+from systems.sys_Parents        import ControlAffineSys
+from controllers.ctr_Parents    import Controller
+
 from utilities.utils import reftraj_lsd
 
 class Sim_276BPR3(Simulator):
@@ -13,7 +16,7 @@ class Sim_276BPR3(Simulator):
                  ctr: Controller) -> None:
         super().__init__(sys, ctr)
 
-    def run(self, IC: ndarray, duration: float, noise:bool = False) -> ndarray:
+    def run(self,IC:ndarray,duration:float,noise:bool=False) -> Tuple[ndarray,ndarray]:
         time_step = 0.5        # time between steps in seconds
         sim_time = duration    # simulation time
         t = 0

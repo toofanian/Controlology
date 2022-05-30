@@ -1,8 +1,10 @@
-from types import NoneType
 import torch
 import cvxpy as cp
 import numpy as np
-from typing import Optional, Tuple, Union
+
+from numpy import ndarray
+from typing import Optional
+from types import NoneType
 
 from .ctr_Parents import Controller
 from systems.sys_Parents import ControlAffineSys
@@ -17,7 +19,7 @@ class Ctr_nCLF(Controller):
         self.refcontrol:Controller = refcontrol(sys) if type(refcontrol) != NoneType else np.zeros((self.sys.uDims,1))
         self.clfqp = self._makeproblem_clfqp()
 
-    def u(self,t,x):
+    def u(self,x:ndarray,t:Optional[float]=None) -> ndarray:
         u_ref = self.refcontrol.u(t,x) if type(self.refcontrol) != np.ndarray else self.refcontrol
 
         f = self.sys.f(t,x)

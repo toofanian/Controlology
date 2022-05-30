@@ -1,5 +1,8 @@
 import numpy as np
 
+from typing import Tuple
+from numpy import ndarray
+
 from controllers.ctr_Parents import Controller
 from systems.sys_Parents import ControlAffineSys
 from simulators.sim_Parents import Simulator
@@ -25,10 +28,7 @@ class Sim_Manual(Simulator):
         super().__init__(sys=sys, ctr=ctr)
 
 
-    def run(self,
-            IC:np.ndarray,
-            duration:float,
-            noise=False) -> np.ndarray:
+    def run(self,IC:ndarray,duration:float,noise:bool=False) -> Tuple[ndarray,ndarray]:
 
         dt = .001
         x_seq = np.empty((self.sys.xDims+1,int(duration/dt)))
@@ -38,7 +38,7 @@ class Sim_Manual(Simulator):
         t = 0
         x = IC
         for i in range(x_seq.shape[1]-1):
-            u = self.ctr.u(0,x)
+            u = self.ctr.u(x=x)
     
             x_seq[:self.sys.xDims,i] = x[:,0]
             u_seq[:self.sys.uDims,i] = u[:,0]

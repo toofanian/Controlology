@@ -1,6 +1,9 @@
-from .sys_Parents import ControlAffineSys
 import numpy as np
+
 from typing import Tuple,Union,Optional
+from numpy import ndarray
+
+from .sys_Parents import ControlAffineSys
 
 class Sys_InvertedPendulum(ControlAffineSys):
     '''
@@ -15,9 +18,7 @@ class Sys_InvertedPendulum(ControlAffineSys):
         super().__init__(xDims, xBounds, uDims, uBounds)
         self.params = {'m':1, 'l':1, 'b':.01}
 
-    def f(self,
-          t:float, 
-          x:np.ndarray) -> np.ndarray:
+    def f(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         x1 = x[0,0]
         x2 = x[1,0]
         m = self.params['m']
@@ -27,9 +28,7 @@ class Sys_InvertedPendulum(ControlAffineSys):
         f = np.array([[x1],[  (1/l)*np.sin(x1) - (b/(m*l**2))*x2  ]])
         return f
 
-    def g(self,
-          t:float, 
-          x:np.ndarray) -> np.ndarray:
+    def g(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         x1 = x[0,0]
         x2 = x[1,0]
         g = self.params['g']
@@ -39,20 +38,15 @@ class Sys_InvertedPendulum(ControlAffineSys):
         g = np.array([[0],[1/(m*l**2)]])
         return g
 
-    def w(self,
-          t:float, 
-          x:np.ndarray) -> np.ndarray:
+    def w(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         w = np.zeros((2,1))
         return w
 
-    def xdot(self, 
-             t:float, 
-             x:np.ndarray, 
-             u:np.ndarray, 
-             noise:bool=False) -> Tuple[np.ndarray,np.ndarray,np.ndarray]:
+    def xdot(self,x:ndarray,t:Optional[float]=None,u:Optional[ndarray]=None,noise:bool=False) -> ndarray:
         f = self.f(t,x)
         g = self.g(t,x)
         w = self.w(t,x)
+        if u == None: u = np.zeros((self.uDims,1))
         if noise == False: w = np.zeros(w.shape)
         return f + g@u + w
 
