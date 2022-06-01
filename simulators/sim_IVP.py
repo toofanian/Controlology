@@ -41,7 +41,7 @@ class Sim_SolIVP(Simulator):
             return xdot.flatten()
 
         tspan = (0,duration)
-        traj = solve_ivp(odefunc,tspan,IC.flatten())    
+        traj = solve_ivp(odefunc,tspan,IC.flatten(),max_step = duration/100)    
         
         x_data = np.block([[traj.y],[np.reshape(traj.t,(1,traj.t.shape[0]))]])
         u_data = self.u_seq

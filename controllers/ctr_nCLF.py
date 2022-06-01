@@ -16,7 +16,7 @@ class Ctr_nCLF(Controller):
     '''
     def __init__(self,
                  sys: ControlAffineSys,
-                 model_path:str = 'controllers/trainedNetworks/singleint_9epoch_10penalty_noControlInQPGoal_lag2is100.pth',
+                 model_path:str = 'controllers/trainedNetworks/singleInt_epoch9.pth',
                  refcontrol:Optional[Controller]=None) -> None: #TODO implement ref control class
         super().__init__(sys)
         self.nCLF = torch.load(model_path)
@@ -24,10 +24,10 @@ class Ctr_nCLF(Controller):
         self.clfqp = makeproblem_clfqp(self)
 
     def u(self,x:ndarray,t:Optional[float]=None) -> ndarray:
-        u_ref = self.refcontrol.u(t,x) if type(self.refcontrol) != np.ndarray else self.refcontrol
+        u_ref = self.refcontrol.u(x,t) if type(self.refcontrol) != np.ndarray else self.refcontrol
 
-        f = self.sys.f(t,x)
-        g = self.sys.g(t,x)
+        f = self.sys.f(x,t)
+        g = self.sys.g(x,t)
 
         x_ten = torch.tensor(x.T,requires_grad=True)
         clf_value_ten:torch.Tensor = self.nCLF(x_ten.float())

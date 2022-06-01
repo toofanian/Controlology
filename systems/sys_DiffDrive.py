@@ -32,8 +32,8 @@ class Sys_DiffDrive(ControlAffineSys):
         return w
 
     def xdot(self,x:ndarray,t:Optional[float]=None,u:Optional[ndarray]=None,noise:bool=False) -> ndarray:
-        f = self.f(t,x)
-        g = self.g(t,x)
-        w = self.w(t,x)
+        f = self.f(x,t)
+        g = self.g(x,t)
+        w = self.w(x,t)
         if noise == False: w = np.zeros(w.shape)
         return f + g@u + w

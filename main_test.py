@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # user define initial condition, duration, and sim options
     xi = np.array([[.5]])
-    duration = 5
+    duration = 1
     noise = True
 
     # run sim, generate visualizations if verbose

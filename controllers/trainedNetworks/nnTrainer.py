@@ -83,18 +83,19 @@ class train_nCLF():
         for epoch in range(epochs):
             ti = time.time()
             average_r = 0
-            clf_val_atzero:torch.Tensor = self.network(torch.zeros((self.sys.xDims,1)).T.float())
-            assert clf_val_atzero >= 0
 
             loss = torch.zeros((1))
-            loss += torch.squeeze(lagrange_atzero*clf_val_atzero)
+
+            clf_val_atzero:torch.Tensor = self.network(torch.zeros((self.sys.xDims,1)).T.float())
+
+            loss += torch.squeeze(lagrange_atzero * clf_val_atzero)
 
             for i,x_ten in enumerate(dataloader):
                 
                 # get system dynamics from sys class
                 x = x_ten.detach().numpy().T
-                f = self.sys.f(0,x)
-                g = self.sys.g(0,x)
+                f = self.sys.f(x)
+                g = self.sys.g(x)
                 
                 # get clf value and gradient on x
                 x_ten.requires_grad_(requires_grad=True)
@@ -133,9 +134,9 @@ class train_nCLF():
         
             print(f'epoch {epoch}\tof {epochs} complete.\tloss: {loss.detach().numpy()[0]}.\taverage r: {average_r}\tepoch time: {round(time.time()-ti)} seconds')
             
-            torch.save(self.network,f'controllers/trainedNetworks/singleint_{epoch}epoch_10penalty_noControlInQPGoal_lag2is100.pth')
+            torch.save(self.network,f'controllers/trainedNetworks/singleInt_epoch{epoch}.pth')
 
-            if loss <= .001: break
+            #if loss <= .001: break
         #torch.save(self.network,'controllers/trainedNetworks/singleint_60epoch_10penalty.pth')
         pass
 
