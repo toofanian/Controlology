@@ -12,7 +12,7 @@ from systems.sys_Parents import ControlAffineSys
 class Ctr_nCLF(Controller):
     def __init__(self,
                  sys: ControlAffineSys,
-                 model_path:str = 'controllers/trainedNetworks/singleint_60epoch_10penalty.pth',
+                 model_path:str = 'controllers/trainedNetworks/singleint_9epoch_10penalty_noControlInQPGoal_lag2is100.pth',
                  refcontrol:Optional[Controller]=None) -> None: #TODO implement ref control class
         super().__init__(sys)
         self.nCLF = torch.load(model_path)

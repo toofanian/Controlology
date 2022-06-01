@@ -64,7 +64,7 @@ class train_nCLF():
         optimizer = torch.optim.Adam(self.network.parameters(),lr=.002)
 
         lagrange_atzero = 10.
-        lagrange_relax = 1000.
+        lagrange_relax = 100.
 
         epochs = 60
         print(f'training start...')
@@ -121,9 +121,11 @@ class train_nCLF():
             optimizer.step()
         
             print(f'epoch {epoch}\tof {epochs} complete.\tloss: {loss.detach().numpy()[0]}.\taverage r: {average_r}\tepoch time: {round(time.time()-ti)} seconds')
+            
+            torch.save(self.network,f'controllers/trainedNetworks/singleint_{epoch}epoch_10penalty_noControlInQPGoal_lag2is100.pth')
 
-            if loss <= .05: break
-        torch.save(self.network,'controllers/trainedNetworks/singleint_60epoch_10penalty.pth')
+            if loss <= .001: break
+        #torch.save(self.network,'controllers/trainedNetworks/singleint_60epoch_10penalty.pth')
         pass
 
 
@@ -142,7 +144,9 @@ class train_nCLF():
         c = 1 # hyperparameter, should be tied to one used during training
 
         ### define objective
-        objective_expression = cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_penalty_param,self.r_var)
+        objective_expression = 0*cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
+        #objective_expression = cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
+
         objective = cp.Minimize(objective_expression)
 
         ### define constraints
@@ -180,7 +184,8 @@ class train_nCLF():
         c = 1 # hyperparameter, should be tied to one used during training
 
         ### define objective
-        objective_expression = cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
+        objective_expression = 0*cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
+        #objective_expression = cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
         objective = cp.Minimize(objective_expression)
 
         ### define constraints
