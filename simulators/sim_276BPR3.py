@@ -37,9 +37,9 @@ class Sim_276BPR3(Simulator):
             t1 = time()
             i += 1
 
-            u = self.ctr.u(t,x)
+            u = self.ctr.u(x,t)
             u_seq[:,i-1] = u[:,0]
-            x += time_step * self.sys.xdot(t,x,u,noise=noise)
+            x += time_step * self.sys.xdot(x,t,u,noise=noise)
             t += time_step
             traj[:self.sys.xDims,i] = x[:,0]
             traj[-1,i] = t
