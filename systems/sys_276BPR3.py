@@ -8,9 +8,10 @@ from .sys_Parents import ControlAffineSys
 class Sys_276BPR3(ControlAffineSys):
     def __init__(self) -> None:
         xDims = 3 #TODO replace this super init pass with abstract property?
+        xBounds = np.array([[-3,3],[-3,3],[-np.pi,np.pi]])
         uDims = 2
         uBounds = np.array([[0,1],[-1,1]]) #TODO return these to 0,1 and -1,1
-        super().__init__(xDims=xDims,uDims=uDims,uBounds=uBounds)
+        super().__init__(xDims=xDims,xBounds=xBounds,uDims=uDims,uBounds=uBounds)
 
     def f(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         f = np.zeros((self.xDims,1))
