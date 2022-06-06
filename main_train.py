@@ -10,5 +10,6 @@ if __name__ == '__main__':
     then, run the trainer.
     '''
 
-    trainer = train_nCLF(Sys_SingleIntegrator)
-    trainer.train()
+    sys = Sys_SingleIntegrator()
+    trainer = train_nCLF(sys)
+    trainer.train('controllers/trainedNetworks/SingleIntegrator_test2')

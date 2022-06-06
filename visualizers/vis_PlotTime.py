@@ -23,9 +23,6 @@ class Vis_PlotTime(Visualizer):
         
         
         plt.show()
-
-
-
         
         if type(u_data) != NoneType:
             for i in range(u_data.shape[0]-1):

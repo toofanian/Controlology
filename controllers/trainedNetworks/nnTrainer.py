@@ -23,8 +23,9 @@ class nCLF(nn.Module):
                   hidden_layers:int=2) -> None:
         super().__init__()
 
+        assert hidden_layers > 0
+
         layers = []
-        # BUG: assumes at least 1 hidden layer
         layers.append(nn.Linear(x_dims,hidden_size)) 
         layers.append(nn.ReLU())
         for _ in range(hidden_layers-1):
@@ -36,6 +37,7 @@ class nCLF(nn.Module):
 
     def forward(self,x):
         out = self.stack_mlp(x)**2 # TODO squared to enforce pos def, but is there a better way to do this?
+                                   # https://arxiv.org/pdf/2001.06116.pdf section 3.1 (recommended by Prof Yuanyuan Shi)
         return out
 
 
@@ -59,36 +61,72 @@ class train_nCLF():
     '''
     Trains a neural clf for a given dynamic system.
 
-    Call self.train() to train.
+    Call train() method to train.
     '''
     def __init__(self,
                  sys:ControlAffineSys) -> None:
 
-        self.sys:ControlAffineSys = sys()
+        self.sys:ControlAffineSys = sys
         self.network = nCLF(self.sys.xDims)
-        self.clfqp_layer = self._makeProblem_clfqp_layer()
 
-    def train(self,path:Optional[str]=None):
+        ##### setup CLFQP using differentiable cvxpylayers
+
+        ### define variables and parameters
+        self.u_var           = cp.Variable((self.sys.uDims,1))  # control vector
+        self.u_ref_param     = cp.Parameter((self.sys.uDims,1)) # refrence control vector, if used
+        self.r_var           = cp.Variable((1,1),nonneg=True)   # CLF relaxation
+        self.r_penalty_param = cp.Parameter((1,1),nonneg=True)  # objective weight for CLF relaxation
+        self.V_param         = cp.Parameter((1,1),nonneg=True)  # CLF value
+        self.LfV_param       = cp.Parameter((1,1))              # Lie derivative of CLF along drift
+        self.LgV_param       = cp.Parameter((1,self.sys.uDims)) # Lie derivative of CLF along control (for each control)
+        self.c = 1                                              # scale for exponential stability, not param so prob is dpp
+
+        ### define objective
+        objective_expression = 0*cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
+        # BUG r would be > 0 before u was maxed out. Difficult to find correct weight that didnt break solver.
+        # As workaround, set control weight to zero. Now r is only > 0 when u is maxed.
+        #objective_expression = cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
+        objective = cp.Minimize(objective_expression)
+
+        ### define constraints
+        constraints = []
+        # control constraints
+        for iu in range(self.sys.uDims):
+            constraints.append(self.u_var[iu] >= self.sys.uBounds[iu,0]) # lower bound for control u_i
+            constraints.append(self.u_var[iu] <= self.sys.uBounds[iu,1]) # upper bound for control u_i
+        # CLF constraint
+        constraints.append(self.LfV_param + self.LgV_param@self.u_var <= -self.V_param + self.r_var) # exponential clf condition
+
+        ### assemble problem
+        problem = cp.Problem(objective,constraints)
+        assert problem.is_dpp(), 'Problem is not dpp'
+
+        # convert to differentiable layer, store in self for later use
+        variables = [self.u_var,self.r_var]
+        parameters = [self.u_ref_param,self.r_penalty_param,self.V_param,self.LfV_param,self.LgV_param]
+        self.clfqp_layer = CvxpyLayer(problem=problem,variables=variables,parameters=parameters) # differentiable solver class
+
+
+    def train(self,save:Optional[str]=None):
         num_samples = 1000
-
-        
-        if type(path)==str: self.network = torch.load(path)
 
         optimizer = torch.optim.Adam(self.network.parameters(),lr=.002)
 
         lagrange_atzero = 10.
         lagrange_relax = 100.
 
-        epochs = 100 # Saves at every epoch. See break condition for
+        epochs = 100 # Saves at every 10th epoch.
         print(f'training start...')
         for epoch in range(1,epochs+1):
-            # resampling every epoch really helps apparently
+            # NOTE: resampling data every epoch really helps apparently
             dataset = dataset_UniformStates(xBounds=self.sys.xBounds,num_samples=num_samples)
             dataloader = DataLoader(dataset=dataset,batch_size=1,shuffle=True)
             # TODO allow batch > 1. currently bottlenecked at qp.
 
-
+            # initialize some training metrics
             ti = time.time()
+            r_at_epoch = []
+            loss_at_epoch = []
             average_r = 0
 
             loss = torch.zeros((1))
@@ -138,52 +176,12 @@ class train_nCLF():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+            loss_at_epoch.append(loss.detach().numpy())
+            r_at_epoch.append(average_r)
         
             print(f'epoch {epoch}\tof {epochs} complete.\tloss: {loss.detach().numpy()[0]}.\taverage r: {average_r}\tepoch time: {round(time.time()-ti)} seconds')
             
             if epoch%10 == 0:
-                torch.save(self.network,f'controllers/trainedNetworks/InvertedPendulum/epoch{epoch}.pth')
-
-        pass
-
-
-    def _makeProblem_clfqp_layer(self):
-        '''
-        sets up the CLFQP, and returns it as a differentiable cvxpylayer
-        '''
-        ### define variables and parameters
-        self.u_var           = cp.Variable((self.sys.uDims,1))  # control vector
-        self.u_ref_param     = cp.Parameter((self.sys.uDims,1)) # refrence control vector, if used
-        self.r_var           = cp.Variable((1,1),nonneg=True)   # CLF relaxation
-        self.r_penalty_param = cp.Parameter((1,1),nonneg=True)  # objective weight for CLF relaxation
-        self.V_param         = cp.Parameter((1,1),nonneg=True)  # CLF value
-        self.LfV_param       = cp.Parameter((1,1))              # Lie derivative of CLF along drift
-        self.LgV_param       = cp.Parameter((1,self.sys.uDims)) # Lie derivative of CLF along control (for each control)
-        c = 1                                                   # scale for exponential stability, not param so prob is dpp
-
-        ### define objective
-        objective_expression = 0*cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
-        # BUG r would be > 0 before u was maxed out. Difficult to find correct weight that didnt break solver.
-        # As workaround, set control weight to zero. Now r is only > 0 when u is maxed.
-        #objective_expression = cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
-        objective = cp.Minimize(objective_expression)
-
-        ### define constraints
-        constraints = []
-        # control constraints
-        for iu in range(self.sys.uDims):
-            constraints.append(self.u_var[iu] >= self.sys.uBounds[iu,0]) # lower bound for control u_i
-            constraints.append(self.u_var[iu] <= self.sys.uBounds[iu,1]) # upper bound for control u_i
-        # CLF constraint
-        constraints.append(self.LfV_param + self.LgV_param@self.u_var <= -self.V_param + self.r_var) # exponential clf condition
-
-        ### assemble problem
-        problem = cp.Problem(objective,constraints)
-        assert problem.is_dpp(), 'Problem is not dpp'
-
-        # convert to differentiable layer, store in self for later use
-        variables = [self.u_var,self.r_var]
-        parameters = [self.u_ref_param,self.r_penalty_param,self.V_param,self.LfV_param,self.LgV_param]
-        problem_layer = CvxpyLayer(problem=problem,variables=variables,parameters=parameters) # differentiable solver class
-        
-        return problem_layer
+                if type(save) == str:
+                    torch.save(self.network,save+f'/epoch{epoch}.pth') 
