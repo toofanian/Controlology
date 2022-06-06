@@ -5,13 +5,13 @@ from numpy import ndarray
 
 from .sys_Parents import ControlAffineSys
 
-class HW1P3_MAE281B(ControlAffineSys):
+class Sys_HW1P3_MAE281B(ControlAffineSys):
     def __init__(self) -> None:
         xDims = 3
-        xBounds = np.array([[-3,3],[-3,3]])
+        xBounds = np.array([[-3,3],[-3,3],[-3,3]])
 
         uDims = 1
-        uBounds = np.array([[-10000,10000]])
+        uBounds = np.array([[-1000,1000]])
 
         super().__init__(xDims=xDims,xBounds=xBounds,uDims=uDims,uBounds=uBounds)
 
