@@ -27,17 +27,19 @@ class nCLF(nn.Module):
 
         layers = []
         layers.append(nn.Linear(x_dims,hidden_size)) 
-        layers.append(nn.ReLU())
+        layers.append(nn.Tanh())
         for _ in range(hidden_layers-1):
             layers.append(nn.Linear(hidden_size,hidden_size))
-            layers.append(nn.ReLU())
-        layers.append(nn.Linear(hidden_size,1))
+            layers.append(nn.Tanh())
 
         self.stack_mlp = nn.Sequential(*layers)
 
     def forward(self,x):
-        out = self.stack_mlp(x)**2 # TODO squared to enforce pos def, but is there a better way to do this?
-                                   # https://arxiv.org/pdf/2001.06116.pdf section 3.1 (recommended by Prof Yuanyuan Shi)
+        out:torch.Tensor = self.stack_mlp(x)     
+        out = .5*(out*out).sum(dim=1)[:,None]
+        
+        # TODO squared to enforce pos def, but is there a better way to do this?
+        # https://arxiv.org/pdf/2001.06116.pdf section 3.1 (recommended by Prof Yuanyuan Shi)
         return out
 
 
@@ -93,7 +95,7 @@ class train_nCLF():
             constraints.append(self.u_var[iu] >= self.sys.uBounds[iu,0]) # lower bound for control u_i
             constraints.append(self.u_var[iu] <= self.sys.uBounds[iu,1]) # upper bound for control u_i
         # CLF constraint
-        constraints.append(self.LfV_param + self.LgV_param@self.u_var <= -self.V_param + self.r_var) # exponential clf condition
+        constraints.append(self.LfV_param + self.LgV_param@self.u_var <= -self.c*self.V_param + self.r_var) # exponential clf condition
 
         ### assemble problem
         problem = cp.Problem(objective,constraints)
@@ -113,7 +115,7 @@ class train_nCLF():
         lagrange_atzero = 10.
         lagrange_relax = 100.
 
-        epochs = 100 # Saves at every 10th epoch.
+        epochs = 200 # Saves at every 10th epoch.
         print(f'training start...')
         for epoch in range(1,epochs+1):
             # NOTE: resampling data every epoch really helps apparently
