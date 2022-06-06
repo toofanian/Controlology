@@ -37,7 +37,7 @@ class Sim_SolIVP(Simulator):
             u = self.ctr.u(x=x)
             u_forseq = np.concatenate((u,np.array([[t]])),axis=0)
             self.u_seq = np.concatenate((self.u_seq,u_forseq),axis=1)
-            xdot = self.sys.xdot(t,x,u,noise=noise)
+            xdot = self.sys.xdot(x,t,u,noise=noise)
             return xdot.flatten()
 
         tspan = (0,duration)
