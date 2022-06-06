@@ -31,7 +31,6 @@ class Sys_InvertedPendulum(ControlAffineSys):
     def g(self, x:ndarray, t:Optional[float]=None) -> ndarray:
         x1 = x[0,0]
         x2 = x[1,0]
-        g = self.params['g']
         m = self.params['m']
         l = self.params['l']
         b = self.params['b']
