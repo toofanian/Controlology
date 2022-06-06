@@ -1,5 +1,7 @@
-# Toof Control Package
+# ECE 228 Project Repo
 General nonlinear control playground, built to prevent redundant coding during research, and also as good practice. There are probably other, better packages for similar applications.
+
+This is a test
 
 
 ## File structure:
