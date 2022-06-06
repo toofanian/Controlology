@@ -6,8 +6,9 @@ import cvxpy as cp
 from cvxpylayers.torch import CvxpyLayer
 from torch.utils.data import Dataset,DataLoader
 
+from typing import Optional
+
 from systems.sys_Parents import ControlAffineSys
-from systems.sys_ActiveCruiseControl import activeCruiseControl
 
 class nCLF(nn.Module):
     '''
@@ -67,20 +68,26 @@ class train_nCLF():
         self.network = nCLF(self.sys.xDims)
         self.clfqp_layer = self._makeProblem_clfqp_layer()
 
-    def train(self):
-        num_samples = 10000
-        dataset = dataset_UniformStates(xBounds=self.sys.xBounds,num_samples=num_samples)
-        dataloader = DataLoader(dataset=dataset,batch_size=1,shuffle=True)
-        # TODO allow batch > 1. currently bottlenecked at qp.
+    def train(self,path:Optional[str]=None):
+        num_samples = 1000
+
+        
+        if type(path)==str: self.network = torch.load(path)
 
         optimizer = torch.optim.Adam(self.network.parameters(),lr=.002)
 
         lagrange_atzero = 10.
         lagrange_relax = 100.
 
-        epochs = 60 # Saves at every epoch. See break condition for
+        epochs = 100 # Saves at every epoch. See break condition for
         print(f'training start...')
-        for epoch in range(epochs):
+        for epoch in range(1,epochs+1):
+            # resampling every epoch really helps apparently
+            dataset = dataset_UniformStates(xBounds=self.sys.xBounds,num_samples=num_samples)
+            dataloader = DataLoader(dataset=dataset,batch_size=1,shuffle=True)
+            # TODO allow batch > 1. currently bottlenecked at qp.
+
+
             ti = time.time()
             average_r = 0
 
@@ -115,7 +122,7 @@ class train_nCLF():
                 # assign penalty for relaxation, should be related to infinity norm of u_bounds
                 # BUG currently set up to ignore control effort, will use maximal control,
                 # relax penalty is arbitrary since there is nothing to compete with.
-                relax_penalty = torch.tensor([[10]],dtype=torch.float32)
+                relax_penalty = torch.tensor([[1]],dtype=torch.float32)
 
                 # compute clfqp layer
                 params = [u_ref,relax_penalty,clf_value_ten,LfV_ten,LgV_ten]
@@ -134,10 +141,9 @@ class train_nCLF():
         
             print(f'epoch {epoch}\tof {epochs} complete.\tloss: {loss.detach().numpy()[0]}.\taverage r: {average_r}\tepoch time: {round(time.time()-ti)} seconds')
             
-            torch.save(self.network,f'controllers/trainedNetworks/singleInt_epoch{epoch}.pth')
+            if epoch%10 == 0:
+                torch.save(self.network,f'controllers/trainedNetworks/InvertedPendulum/epoch{epoch}.pth')
 
-            #if loss <= .001: break
-        #torch.save(self.network,'controllers/trainedNetworks/singleint_60epoch_10penalty.pth')
         pass
 
 
