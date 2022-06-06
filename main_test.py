@@ -11,11 +11,6 @@ from visualizers.vis_PlotTime               import Vis_PlotTime
 ###############################################################
 
 if __name__ == '__main__':
-    '''
-    to use: 
-    import desired system model, controller, simulator, visualizer, and test suite from modules above,
-    then run the test suite with args below.
-    '''
 
     # choose system
     sys = Sys_SingleIntegrator()
