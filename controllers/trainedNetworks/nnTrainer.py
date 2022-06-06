@@ -73,7 +73,6 @@ class train_nCLF():
 
         ### define variables and parameters
         self.u_var           = cp.Variable((self.sys.uDims,1))  # control vector
-        self.u_ref_param     = cp.Parameter((self.sys.uDims,1)) # refrence control vector, if used
         self.r_var           = cp.Variable((1,1),nonneg=True)   # CLF relaxation
         self.r_penalty_param = cp.Parameter((1,1),nonneg=True)  # objective weight for CLF relaxation
         self.V_param         = cp.Parameter((1,1),nonneg=True)  # CLF value
@@ -82,10 +81,9 @@ class train_nCLF():
         self.c = 1                                              # scale for exponential stability, not param so prob is dpp
 
         ### define objective
-        objective_expression = 0*cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
+        objective_expression = 0*cp.sum_squares(self.u_var) + cp.multiply(self.r_var,self.r_penalty_param)
         # BUG r would be > 0 before u was maxed out. Difficult to find correct weight that didnt break solver.
         # As workaround, set control weight to zero. Now r is only > 0 when u is maxed.
-        #objective_expression = cp.sum_squares(self.u_var - self.u_ref_param) + cp.multiply(self.r_var,self.r_penalty_param)
         objective = cp.Minimize(objective_expression)
 
         ### define constraints
@@ -103,7 +101,7 @@ class train_nCLF():
 
         # convert to differentiable layer, store in self for later use
         variables = [self.u_var,self.r_var]
-        parameters = [self.u_ref_param,self.r_penalty_param,self.V_param,self.LfV_param,self.LgV_param]
+        parameters = [self.r_penalty_param,self.V_param,self.LfV_param,self.LgV_param]
         self.clfqp_layer = CvxpyLayer(problem=problem,variables=variables,parameters=parameters) # differentiable solver class
 
 
@@ -151,11 +149,6 @@ class train_nCLF():
                 # compute lie derivatives
                 LfV_ten:torch.Tensor = (clf_value_grad @ f).type_as(clf_value_ten)
                 LgV_ten:torch.Tensor = (clf_value_grad @ g).type_as(clf_value_ten)
-
-                # assign referenc control
-                # with zero reference, clfqp will try to minimize control effort
-                # BUG currently set up to ignore control effort, will use maximal control.
-                u_ref = torch.zeros((self.sys.uDims,1),dtype=torch.float32) 
                 
                 # assign penalty for relaxation, should be related to infinity norm of u_bounds
                 # BUG currently set up to ignore control effort, will use maximal control,
@@ -163,10 +156,11 @@ class train_nCLF():
                 relax_penalty = torch.tensor([[1]],dtype=torch.float32)
 
                 # compute clfqp layer
-                params = [u_ref,relax_penalty,clf_value_ten,LfV_ten,LgV_ten]
+                params = [relax_penalty,clf_value_ten,LfV_ten,LgV_ten]
                 u,r = self.clfqp_layer(*params)
 
                 # BUG r should be nonneg, but sometimes it's just not... so i'm adding a relu...
+                # this appears to happen when u=0 is sufficient for dV/dt < 0, so r should be zero anyway.
                 # assert r >= -1e-5, f'r is negative: {r}'
                 r = torch.relu(r)
 
