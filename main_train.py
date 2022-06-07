@@ -1,5 +1,6 @@
 from controllers.trainedNetworks.nnTrainer import train_nCLF
 from systems.sys_SingleIntegrator import Sys_SingleIntegrator
+from systems.sys_InvertedPendulum import Sys_InvertedPendulum
 
 
 if __name__ == '__main__':
@@ -10,10 +11,10 @@ if __name__ == '__main__':
     '''
 
     # pick a system
-    sys = Sys_SingleIntegrator()
+    sys = Sys_InvertedPendulum()
 
     # initialize the trainer
     trainer = train_nCLF(sys)
 
     # run the trainer, defining a save path if desired
-    trainer.train('controllers/trainedNetworks/SingleIntegrator_test2')
+    trainer.train('controllers/trainedNetworks/InvertedPendulum_test1')

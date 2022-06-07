@@ -4,6 +4,7 @@ import torch
 ###############################################################
 
 from systems.sys_SingleIntegrator           import Sys_SingleIntegrator
+from systems.sys_InvertedPendulum           import Sys_InvertedPendulum
 from controllers.ctr_nCLF                   import Ctr_nCLF
 from simulators.sim_IVP                     import Sim_SolIVP
 from visualizers.vis_PlotTime               import Vis_PlotTime
@@ -13,18 +14,18 @@ from visualizers.vis_PlotTime               import Vis_PlotTime
 if __name__ == '__main__':
 
     # choose system
-    sys = Sys_SingleIntegrator()
+    sys = Sys_InvertedPendulum()
 
     # choose controller. if neural controller, preload network.
-    net = torch.load('controllers/trainedNetworks/SingleIntegrator_test2/epoch20.pth')
+    net = torch.load('controllers/trainedNetworks/InvertedPendulum_test1/epoch60.pth')
     ctr = Ctr_nCLF(sys=sys,net=net,ref=None)
 
     # choose simulator
     sim = Sim_SolIVP(sys=sys,ctr=ctr)
 
     # define sim conditions and run
-    xInitial = np.array([[.5]])
-    duration = 20
+    xInitial = np.array([[.5],[.5]])
+    duration = 1
     noise = False
     x_data,u_data = sim.run(xInitial=xInitial,duration=duration,noise=False)
     
