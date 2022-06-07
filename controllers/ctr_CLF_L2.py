@@ -8,7 +8,7 @@ from numpy import ndarray
 from .ctr_Parents           import Controller
 from systems.sys_Parents    import ControlAffineSys
 
-class Controller_CLF_L2_Origin(Controller): 
+class Controller_CLF_L2(Controller): 
     '''
     Assumes V(x) = (1/2)*||x||_2^2 is a valid lyapunov function, then
     solves a CLFQP to return a goal-reaching control. If this assumption is false, control behavior is unqualified.
