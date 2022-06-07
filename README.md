@@ -13,6 +13,7 @@ ToofControlPackage
 │-  README.md
 │-  main_train.py       <--- trains a neural CLF for a system
 │-  main_test.py        <--- tests a controller on a system
+│-  ...                 <--- misc, OK to ignore
 │
 └───systems
 │   │-  sys_Parents.py            <--- abstract parent classes
