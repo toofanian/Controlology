@@ -48,9 +48,9 @@ ToofControlPackage
 ## Instructions:
 To run the code...
 
-1) Open main_train.py, follow instructions to train a neural control lyapunov function for a defined system. 
+1) Open main_train.py, *follow the comments* to train a neural control lyapunov function for a defined system. 
    1) The script is already set up with the ```Sys_FinalP2_MAE281B```, but others may be chosen from ```/systems/```, or you may create your own per the abstract base class.
    2) Create a new folder for the trained model data, or use the existing one.
-2) Open main_test.py, follow the instructions to test a neural control lyapunov function on its corresponding system. 
+2) Open main_test.py, *follow the comments* to test a neural control lyapunov function on its corresponding system. 
    1) The test is a simulation of the system over time, with user defined initial condition. The script will plot the result. A well trained nCLF will drive the system to zero as time goes to infinity (hopefully much earlier than that!).
    2) The script is set up to test a pretrained model for the ```Sys_FinalP2_MAE281B``` system.
