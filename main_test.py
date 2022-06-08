@@ -19,7 +19,7 @@ if __name__ == '__main__':
     sys = Sys_FinalP2_MAE281B()
 
     # choose controller. if neural controller, preload network.
-    net = torch.load('controllers/trainedNetworks/FinalP2_MAE281B_test1/epoch100.pth')
+    net = torch.load('controllers/trainedNetworks/FinalP2_MAE281B_test2/epoch200.pth')
     ctr = Ctr_nCLF(sys=sys,net=net,ref=None)
 
     # choose simulator and visualizer

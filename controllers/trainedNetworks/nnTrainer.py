@@ -107,16 +107,17 @@ class train_nCLF():
         self.clfqp_layer = CvxpyLayer(problem=problem,variables=variables,parameters=parameters) # differentiable solver class
 
 
-    def train(self,save:Optional[str]=None):
-        num_samples = 1000
+    def train(self,n_samples:int,save:Optional[str]=None):
+        num_samples = n_samples
 
         optimizer = torch.optim.Adam(self.network.parameters(),lr=.002)
 
         lagrange_atzero = 10.
         lagrange_relax = 100.
 
-        epochs = 200 # Saves at every 10th epoch.
+        epochs = 100 # Saves at every 10th epoch.
         print(f'training start...')
+        loss_at_epoch = np.empty((3,epochs))
         for epoch in range(1,epochs+1):
             # NOTE: resampling data every epoch really helps apparently
             dataset = dataset_UniformStates(xBounds=self.sys.xBounds,num_samples=num_samples)
@@ -125,15 +126,13 @@ class train_nCLF():
 
             # initialize some training metrics
             ti = time.time()
-            r_at_epoch = []
-            loss_at_epoch = []
             average_r = 0
 
-            loss = torch.zeros((1))
+            loss_term1 = torch.zeros((1)) # zero at zero
+            loss_term2 = torch.zeros((1)) # vdot neg def
 
             clf_val_atzero:torch.Tensor = self.network(torch.zeros((self.sys.xDims,1)).T.float())
-
-            loss += torch.squeeze(lagrange_atzero * clf_val_atzero)
+            loss_term1 += torch.squeeze(lagrange_atzero * clf_val_atzero)
 
             for i,x_ten in enumerate(dataloader):
                 
@@ -159,7 +158,7 @@ class train_nCLF():
 
                 # compute clfqp layer
                 params = [relax_penalty,clf_value_ten,LfV_ten,LgV_ten]
-                u,r = self.clfqp_layer(*params)
+                u,r = self.clfqp_layer(*params,solver_args={"max_iters": 500000})
 
                 # BUG r should be nonneg, but sometimes it's just not... so i'm adding a relu...
                 # this appears to happen when u=0 is sufficient for dV/dt < 0, so r should be zero anyway.
@@ -167,17 +166,22 @@ class train_nCLF():
                 r = torch.relu(r)
 
                 average_r += r.detach().numpy()[0]/num_samples # for reference
-                loss += torch.squeeze(lagrange_relax/num_samples * r)
+                loss_term2 += torch.squeeze(lagrange_relax/num_samples * r)
             
+            loss = loss_term1+loss_term2
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
+            loss_at_epoch[0,epoch-1] = loss_term1.detach().numpy()
+            loss_at_epoch[1,epoch-1] = loss_term2.detach().numpy()
+            loss_at_epoch[-1,epoch-1] = epoch
 
-            loss_at_epoch.append(loss.detach().numpy())
-            r_at_epoch.append(average_r)
-        
             print(f'epoch {epoch}\tof {epochs} complete.\tloss: {loss.detach().numpy()[0]}.\taverage r: {average_r}\tepoch time: {round(time.time()-ti)} seconds')
             
             if epoch%10 == 0:
                 if type(save) == str:
                     torch.save(self.network,save+f'/epoch{epoch}.pth') 
+            
+        return loss_at_epoch
