@@ -5,7 +5,7 @@ from numpy import ndarray
 
 from .sys_Parents import ControlAffineSys
 
-class Sys_Final(ControlAffineSys):
+class Sys_FinalP2_MAE281B(ControlAffineSys):
     def __init__(self) -> None:
         xDims = 2
         xBounds = np.array([[-3,3],[-3,3]])
