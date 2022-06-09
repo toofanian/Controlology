@@ -34,5 +34,11 @@ class Vis_PlotOnV(Visualizer):
             ax.plot3D(x_data[0,:], x_data[1,:], v_data[:,0], 'gray')
             ax.plot3D(x_data[0,:], x_data[1,:], v_data[:,0], 'gray')
             ax.scatter3D(x_data[0,-1], x_data[1,-1], v_data[-1,0], 'red')
+            ax.scatter3D(x_data[0,0], x_data[1,0], v_data[0,0], 'green')
+
+
+        ax.axes.set_xlim3d(left=-3, right=3) 
+        ax.axes.set_ylim3d(bottom=-3, top=3)
+        ax.axes.set_zlim3d(bottom=0)
 
         plt.show()

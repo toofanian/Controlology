@@ -28,6 +28,7 @@ class Vis_PlotEpoch(Visualizer):
             plt.plot(x_data[-1,:],np.sum(x_data[:-1,:],axis=0),color,label=label+f', total loss')
             ic += 1
         plt.xlabel('epoch')
+        plt.yscale('log')
         plt.legend(loc='best')
         
         plt.show()        

@@ -26,7 +26,7 @@ class Vis_PlotTime_compare(Visualizer):
             x_data_B,u_data_B,label_B = self.data_list_B[i]
             for i in range(x_data_A.shape[0]-1):
                 plt.plot(x_data_A[-1,:],x_data_A[i,:],'k-',label='Neural, '+label_A+f', x{i+1}',)
-                plt.plot(x_data_B[-1,:],x_data_B[i,:],'k--',label='L2norm^2, '+label_B+f', x{i+1}',)
+                plt.plot(x_data_B[-1,:],x_data_B[i,:],'k--',label='Fancy V, '+label_B+f', x{i+1}',)
 
         plt.xlabel('time')
         plt.legend(loc='best')

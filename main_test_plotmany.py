@@ -3,7 +3,7 @@ import torch
 
 ###############################################################
 
-from systems.sys_SingleIntegrator           import Sys_SingleIntegrator
+from systems.sys_FinalP2_MAE281B           import Sys_FinalP2_MAE281B
 from controllers.ctr_nCLF                   import Ctr_nCLF
 from simulators.sim_IVP                     import Sim_SolIVP
 from visualizers.vis_PlotTime               import Vis_PlotTime
@@ -13,10 +13,10 @@ from visualizers.vis_PlotTime               import Vis_PlotTime
 if __name__ == '__main__':
 
     # choose system
-    sys = Sys_SingleIntegrator()
+    sys = Sys_FinalP2_MAE281B()
 
     # choose controller. if neural controller, preload network.
-    net = torch.load('controllers/trainedNetworks/SingleIntegrator_test3/epoch200.pth')
+    net = torch.load('controllers/trainedNetworks/FinalP2_MAE281B_test3/epoch1000.pth')
     ctr = Ctr_nCLF(sys=sys,net=net,ref=None)
 
     # choose simulator and visualizer
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     # define sim conditions and run
     tally = 0
     for xInitial in samples:
-        duration = 10
+        duration = 30
         noise = False
         x_data,u_data = sim.run(xInitial=xInitial,duration=duration,noise=False)
         if np.linalg.norm(x_data[:-1,-1]) < 1e-1: tally += 1

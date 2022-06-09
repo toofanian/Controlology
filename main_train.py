@@ -16,4 +16,4 @@ if __name__ == '__main__':
     trainer = train_nCLF(sys)
 
     # run the trainer, defining a relative save path
-    trainer.train('controllers/trainedNetworks/FinalP2_MAE281B_test2')
+    trainer.train(1000,100,'controllers/trainedNetworks/FinalP2_MAE281B_test3')

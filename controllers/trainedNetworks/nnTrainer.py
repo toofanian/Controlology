@@ -107,15 +107,13 @@ class train_nCLF():
         self.clfqp_layer = CvxpyLayer(problem=problem,variables=variables,parameters=parameters) # differentiable solver class
 
 
-    def train(self,n_samples:int,save:Optional[str]=None):
-        num_samples = n_samples
+    def train(self,num_samples:int,epochs:int,save:Optional[str]=None):
 
         optimizer = torch.optim.Adam(self.network.parameters(),lr=.002)
 
         lagrange_atzero = 10.
         lagrange_relax = 100.
 
-        epochs = 100 # Saves at every 10th epoch.
         print(f'training start...')
         loss_at_epoch = np.empty((3,epochs))
         for epoch in range(1,epochs+1):

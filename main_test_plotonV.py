@@ -16,7 +16,7 @@ if __name__ == '__main__':
     sys = Sys_FinalP2_MAE281B()
 
     # choose controller. if neural controller, preload network.
-    net = torch.load('controllers/trainedNetworks/FinalP2_MAE281B_test2/epoch200.pth')
+    net = torch.load('controllers/trainedNetworks/FinalP2_MAE281B_test3/epoch1000.pth')
     ctr = Ctr_nCLF(sys=sys,net=net,ref=None)
 
     # choose simulator and visualizer
@@ -25,7 +25,7 @@ if __name__ == '__main__':
     vis.loadnCLF(net)
 
     # define sim conditions and run
-    num_samples = 1
+    num_samples = 100
     samples = np.random.uniform(low=sys.xBounds[:,0]*.75,high=sys.xBounds[:,1]*.75,size=(num_samples,sys.xBounds.shape[0]))
 
 
