@@ -18,7 +18,6 @@ ToofControlPackage
 └───systems
 │   │-  sys_Parents.py            <--- abstract parent classes
 │   │-  sys_SingleIntegrator.py   <--- system used in report
-│   │-  sys_HW1P3_MAE281B.py      <--- system used in report
 │   │-  sys_FinalP2_MAE281B.py    <--- system used in report
 │   │-  ...                       <--- other systems, add per abc
 │   

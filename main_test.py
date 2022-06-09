@@ -27,7 +27,8 @@ if __name__ == '__main__':
     vis = Vis_PlotTime()
 
     # define sim conditions and run
-    xInitial = np.array([[.5],[-.5]]) # array elements much match sys.xdims
+    # xInitial = np.array([[.5],[-.5]]) # array elements much match sys.xdims, and be within sys.xBounds
+    xInitial = np.random.uniform(low=sys.xBounds[:,0]*.75,high=sys.xBounds[:,1]*.75,size=(1,sys.xBounds.shape[0]))
     duration = 20
     noise = False
     x_data,u_data = sim.run(xInitial=xInitial,duration=duration,noise=False)
