@@ -15,7 +15,9 @@ class ControlAffineSys(ABC):
         self.uBounds = uBounds
 
     @abstractmethod
-    def f(self, x:ndarray, t:Optional[float]=None) -> ndarray:
+    def f(self,
+          x:ndarray,
+          t:Optional[float]=None) -> ndarray:
         '''
         returns drift dynamics
             inputs:
@@ -27,7 +29,9 @@ class ControlAffineSys(ABC):
         pass
 
     @abstractmethod
-    def g(self, x:ndarray, t:Optional[float]=None) -> ndarray:
+    def g(self, 
+          x:ndarray, 
+          t:Optional[float]=None) -> ndarray:
         '''
         returns control affine dynamics
             inputs:
@@ -39,21 +43,27 @@ class ControlAffineSys(ABC):
         pass
 
     @abstractmethod
-    def w(self, x:ndarray, t:Optional[float]=None) -> ndarray:
+    def w(self, 
+          x:ndarray, 
+          t:Optional[float]=None) -> ndarray:
         '''
         returns disturbance on dynamics
         '''
         pass
 
     @abstractmethod
-    def xdot(self,x:ndarray,t:Optional[float]=None,u:Optional[ndarray]=None,noise:bool=False) -> ndarray:
+    def xdot(self,
+             x:ndarray,
+             t:Optional[float]=None,
+             u:Optional[ndarray]=None,
+             noise:bool=False) -> ndarray:
         '''
         returns xdot = f(x) + g(x)u + w(x)
             inputs:
-                t: time for time dependent dynamics. assign any if time invariant
                 x: state provided as array of shape (xdims,1)
+                t: time for time dependent dynamics. assign any or none if time invariant
                 u: control provided as array of shape (udims,1)
             outputs: 
-                xdot: total system dynamics as array of shape (xdims,1)
+                xdot: total system dynamics dx/dt as array of shape (xdims,1)
         '''
         pass
