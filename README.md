@@ -1,4 +1,4 @@
-# Toof Control Package
+# Controlology
 
 This is just a controls playground, built to test various reseaarch interests. 
 
